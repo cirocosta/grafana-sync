@@ -16,19 +16,23 @@ const (
 	DashboardByUid  = "/api/dashboards/uid"
 )
 
-type client struct {
-	address     string
-	verbose     bool
-	accessToken string
-	client      *http.Client
+type ClientConfig struct {
+	Verbose bool
+	Address string
+	AccessToken string
+	Username    string
+	Password    string
 }
 
-func NewClient(address, accessToken string, verbose bool) (c *client) {
+type client struct {
+	client  *http.Client
+	cfg ClientConfig
+}
+
+func NewClient(opts ClientConfig) (c *client) {
 	c = &client{
-		accessToken: accessToken,
-		address:     address,
 		client:      &http.Client{},
-		verbose:     verbose,
+		cfg: opts,
 	}
 	return
 }
@@ -42,9 +46,13 @@ type DashboardRef struct {
 func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 	var verboseBytes []byte
 
-	req.Header.Add("Authorization", "Bearer "+c.accessToken)
+	if c.cfg.AccessToken != "" {
+		req.Header.Add("Authorization", "Bearer "+c.cfg.AccessToken)
+	} else if c.cfg.Username != "" {
+		req.SetBasicAuth(c.cfg.Username, c.cfg.Password)
+	}
 
-	if c.verbose {
+	if c.cfg.Verbose {
 		verboseBytes, err = httputil.DumpRequestOut(req, true)
 		if err != nil {
 			err = errors.Wrapf(err,
@@ -60,7 +68,7 @@ func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 		return
 	}
 
-	if c.verbose {
+	if c.cfg.Verbose {
 		verboseBytes, err = httputil.DumpResponse(resp, true)
 		if err != nil {
 			err = errors.Wrapf(err,
@@ -75,7 +83,7 @@ func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 }
 
 func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard Dashboard, err error) {
-	req, err := http.NewRequest("GET", c.address+path.Join(DashboardByUid, uid), nil)
+	req, err := http.NewRequest("GET", c.cfg.Address+path.Join(DashboardByUid, uid), nil)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"couldn't prepare request")
@@ -106,7 +114,7 @@ func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard Dashbo
 }
 
 func (c *client) ListDashboardRefs(ctx context.Context) (dashboards []*DashboardRef, err error) {
-	req, err := http.NewRequest("GET", c.address+DashboardSearch, nil)
+	req, err := http.NewRequest("GET", c.cfg.Address+DashboardSearch, nil)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"couldn't prepare request")

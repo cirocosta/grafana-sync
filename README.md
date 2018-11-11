@@ -11,14 +11,17 @@ Usage:
   grafana-sync [OPTIONS]
 
 Application Options:
-      --access-token= access token to authenticate against grafana
       --address=      grafana address (default: http://localhost:3000)
       --directory=    directory where dashboards live (default: ./)
   -v, --verbose       displays requests on stderr
 
+Authentication:
+  -u, --username=     basic auth username
+  -p, --password=     basic auth password
+      --access-token= access token to authenticate against grafana
+
 Help Options:
   -h, --help          Show this help message
-
 ```
 
 1. Create an API key that is capable of visualizing all dashboards

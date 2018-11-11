@@ -13,10 +13,15 @@ import (
 )
 
 var config struct {
-	AccessToken string        `long:"access-token" required:"true" description:"access token to authenticate against grafana"`
-	Address     string        `long:"address" default:"http://localhost:3000" description:"grafana address"`
-	Directory   DirectoryFlag `long:"directory" default:"./" description:"directory where dashboards live"`
-	Verbose     bool          `short:"v" long:"verbose" description:"displays requests on stderr"`
+	Address   string        `long:"address" default:"http://localhost:3000" description:"grafana address"`
+	Directory DirectoryFlag `long:"directory" default:"./" description:"directory where dashboards live"`
+	Verbose   bool          `short:"v" long:"verbose" description:"displays requests on stderr"`
+
+	Auth struct {
+		Username    string `short:"u" long:"username" description:"basic auth username"`
+		Password    string `short:"p" long:"password" description:"basic auth password"`
+		AccessToken string `long:"access-token" description:"access token to authenticate against grafana"`
+	} `group:"Authentication"`
 }
 
 func eventuallyCreateDirectory(dir string) (err error) {
@@ -63,7 +68,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	go handleSignals(cancel)
 
-	client := grafana.NewClient(config.Address, config.AccessToken, config.Verbose)
+	client := grafana.NewClient(grafana.ClientConfig{
+		Address:     config.Address,
+		Verbose:     config.Verbose,
+		AccessToken: config.Auth.AccessToken,
+		Username:    config.Auth.Username,
+		Password:    config.Auth.Password,
+	})
 
 	refs, err := client.ListDashboardRefs(ctx)
 	if err != nil {
