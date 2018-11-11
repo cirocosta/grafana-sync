@@ -2,8 +2,10 @@ package grafana
 
 import (
 	"context"
-	"net/http"
 	"encoding/json"
+	"log"
+	"net/http"
+	"net/http/httputil"
 
 	"github.com/pkg/errors"
 )
@@ -13,14 +15,18 @@ const (
 )
 
 type client struct {
-	address string
-	client  *http.Client
+	address     string
+	verbose     bool
+	accessToken string
+	client      *http.Client
 }
 
-func NewClient(address string) (c *client) {
+func NewClient(address, accessToken string, verbose bool) (c *client) {
 	c = &client{
-		address: address,
-		client:  &http.Client{},
+		accessToken: accessToken,
+		address:     address,
+		client:      &http.Client{},
+		verbose:     verbose,
 	}
 	return
 }
@@ -28,6 +34,39 @@ func NewClient(address string) (c *client) {
 type Dashboard struct {
 	Title  string `json:"title"`
 	Folder string `json:"folderTitle"`
+}
+
+func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
+	var verboseBytes []byte
+
+	if c.verbose {
+		verboseBytes, err = httputil.DumpRequestOut(req, true)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to dump verbose version of request")
+			return
+		}
+
+		log.Println(string(verboseBytes))
+	}
+
+	resp, err = c.client.Do(req)
+	if err != nil {
+		return
+	}
+
+	if c.verbose {
+		verboseBytes, err = httputil.DumpResponse(resp, true)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to dump verbose version of response")
+			return
+		}
+
+		log.Println(string(verboseBytes))
+	}
+
+	return
 }
 
 func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, err error) {
@@ -38,8 +77,14 @@ func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, er
 		return
 	}
 
+	q := req.URL.Query()
+	q.Add("type", "dash-db")
+
+	req.URL.RawQuery = q.Encode()
+	req.Header.Add("Authorization", "Bearer "+c.accessToken)
+
 	req = req.WithContext(ctx)
-	resp, err := c.client.Do(req)
+	resp, err := c.doRequest(req)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed while performing request")
@@ -48,8 +93,13 @@ func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, er
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		err = errors.Errorf("non successful response - %s", resp.Status)
+		return
+	}
+
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(dashboards)
+	err = decoder.Decode(&dashboards)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to decode dashboards")
