@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"os"
+	"os/signal"
 	"path"
+	"syscall"
 
 	"github.com/cirocosta/grafana-sync/grafana"
 	"github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 )
 
 var config struct {
@@ -44,14 +46,24 @@ func eventuallyCreateDirectory(dir string) (err error) {
 	return
 }
 
+func handleSignals(cancel context.CancelFunc) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	cancel()
+}
+
 func main() {
 	_, err := flags.Parse(&config)
 	if err != nil {
 		return
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go handleSignals(cancel)
 
 	client := grafana.NewClient(config.Address, config.AccessToken, config.Verbose)
-	refs, err := client.ListDashboardRefs(context.Background())
+	refs, err := client.ListDashboardRefs(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +76,7 @@ func main() {
 			panic(err)
 		}
 
-		_, err = client.GetDashboard(context.Background(), ref.Uid)
+		_, err = client.GetDashboard(ctx, ref.Uid)
 		if err != nil {
 			panic(err)
 		}
