@@ -6,6 +6,21 @@ ps.: assumes use of the `folders` feature from grafana 5+
 
 ### Usage
 
+```
+Usage:
+  grafana-sync [OPTIONS]
+
+Application Options:
+      --access-token= access token to authenticate against grafana
+      --address=      grafana address (default: http://localhost:3000)
+      --directory=    directory where dashboards live (default: ./)
+  -v, --verbose       displays requests on stderr
+
+Help Options:
+  -h, --help          Show this help message
+
+```
+
 1. Create an API key that is capable of visualizing all dashboards
 
 ![API Key creation](./assets/create-api-key.png)
