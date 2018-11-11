@@ -38,3 +38,13 @@ Help Options:
     --directory=./dashboards
 ```
 
+Alternatively, you can also use basic auth (if configured):
+
+```sh
+./grafana-sync \
+    --verbose \
+    --address http://my-instance.com \
+    --username=admin \
+    --password=password \
+    --directory=./dashboards
+```
