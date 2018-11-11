@@ -7,3 +7,5 @@ HOW IT WORKS
 	deployment) and then updates the state the filesystem to reflect
 	such source.
 
+	ps.: assumes use of the `folders` feature from grafana 5+
+
