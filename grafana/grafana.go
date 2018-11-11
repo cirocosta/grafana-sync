@@ -74,7 +74,7 @@ func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 	return
 }
 
-func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard map[string]interface{}, err error) {
+func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard Dashboard, err error) {
 	req, err := http.NewRequest("GET", c.address+path.Join(DashboardByUid, uid), nil)
 	if err != nil {
 		err = errors.Wrapf(err,
@@ -99,6 +99,8 @@ func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard map[st
 			"failed to decode dashboard json")
 		return
 	}
+
+	dashboard["id"] = nil
 
 	return
 }

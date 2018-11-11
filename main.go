@@ -59,24 +59,35 @@ func main() {
 	if err != nil {
 		return
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	go handleSignals(cancel)
 
 	client := grafana.NewClient(config.Address, config.AccessToken, config.Verbose)
+
 	refs, err := client.ListDashboardRefs(ctx)
 	if err != nil {
 		panic(err)
 	}
 
+	var (
+		dashboard           grafana.Dashboard
+		dashboardFolderInFs string
+	)
 	for _, ref := range refs {
-		dashboardFolderInFs := path.Join(string(config.Directory), ref.Folder)
+		dashboardFolderInFs = path.Join(string(config.Directory), ref.Folder)
 
 		err = eventuallyCreateDirectory(dashboardFolderInFs)
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = client.GetDashboard(ctx, ref.Uid)
+		dashboard, err = client.GetDashboard(ctx, ref.Uid)
+		if err != nil {
+			panic(err)
+		}
+
+		err = dashboard.SaveToDisk(path.Join(dashboardFolderInFs, ref.Title))
 		if err != nil {
 			panic(err)
 		}
