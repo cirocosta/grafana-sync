@@ -51,19 +51,22 @@ func main() {
 	}
 
 	client := grafana.NewClient(config.Address, config.AccessToken, config.Verbose)
-	dashboards, err := client.AllDashboards(context.Background())
+	refs, err := client.ListDashboardRefs(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
-	for _, dashboard := range dashboards {
-		dashboardFolderInFs := path.Join(string(config.Directory), dashboard.Folder)
+	for _, ref := range refs {
+		dashboardFolderInFs := path.Join(string(config.Directory), ref.Folder)
 
 		err = eventuallyCreateDirectory(dashboardFolderInFs)
 		if err != nil {
 			panic(err)
 		}
 
-		// update the file with the new dashboard.
+		_, err = client.GetDashboard(context.Background(), ref.Uid)
+		if err != nil {
+			panic(err)
+		}
 	}
 }

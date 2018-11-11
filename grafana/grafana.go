@@ -6,12 +6,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
+	"path"
 
 	"github.com/pkg/errors"
 )
 
 const (
 	DashboardSearch = "/api/search"
+	DashboardByUid  = "/api/dashboards/uid"
 )
 
 type client struct {
@@ -31,13 +33,16 @@ func NewClient(address, accessToken string, verbose bool) (c *client) {
 	return
 }
 
-type Dashboard struct {
+type DashboardRef struct {
+	Uid    string `json:"uid"`
 	Title  string `json:"title"`
 	Folder string `json:"folderTitle"`
 }
 
 func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 	var verboseBytes []byte
+
+	req.Header.Add("Authorization", "Bearer "+c.accessToken)
 
 	if c.verbose {
 		verboseBytes, err = httputil.DumpRequestOut(req, true)
@@ -69,7 +74,36 @@ func (c *client) doRequest(req *http.Request) (resp *http.Response, err error) {
 	return
 }
 
-func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, err error) {
+func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard map[string]interface{}, err error) {
+	req, err := http.NewRequest("GET", c.address+path.Join(DashboardByUid, uid), nil)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"couldn't prepare request")
+		return
+	}
+
+	req = req.WithContext(ctx)
+	resp, err := c.doRequest(req)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed while performing request")
+		return
+	}
+
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&dashboard)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to decode dashboard json")
+		return
+	}
+
+	return
+}
+
+func (c *client) ListDashboardRefs(ctx context.Context) (dashboards []*DashboardRef, err error) {
 	req, err := http.NewRequest("GET", c.address+DashboardSearch, nil)
 	if err != nil {
 		err = errors.Wrapf(err,
@@ -81,7 +115,6 @@ func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, er
 	q.Add("type", "dash-db")
 
 	req.URL.RawQuery = q.Encode()
-	req.Header.Add("Authorization", "Bearer "+c.accessToken)
 
 	req = req.WithContext(ctx)
 	resp, err := c.doRequest(req)
@@ -102,7 +135,7 @@ func (c *client) AllDashboards(ctx context.Context) (dashboards []*Dashboard, er
 	err = decoder.Decode(&dashboards)
 	if err != nil {
 		err = errors.Wrapf(err,
-			"failed to decode dashboards")
+			"failed to decode dashboards ref json")
 		return
 	}
 
