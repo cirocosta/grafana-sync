@@ -1,8 +1,8 @@
 package grafana
 
 import (
-	"os"
 	"encoding/json"
+	"os"
 
 	"github.com/pkg/errors"
 )
@@ -31,4 +31,3 @@ func (d *Dashboard) SaveToDisk(filepath string) (err error) {
 
 	return
 }
-

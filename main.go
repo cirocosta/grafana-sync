@@ -70,19 +70,15 @@ func main() {
 		panic(err)
 	}
 
-	var (
-		dashboard           grafana.Dashboard
-		dashboardFolderInFs string
-	)
 	for _, ref := range refs {
-		dashboardFolderInFs = path.Join(string(config.Directory), ref.Folder)
+		dashboardFolderInFs := path.Join(string(config.Directory), ref.Folder)
 
 		err = eventuallyCreateDirectory(dashboardFolderInFs)
 		if err != nil {
 			panic(err)
 		}
 
-		dashboard, err = client.GetDashboard(ctx, ref.Uid)
+		dashboard, err := client.GetDashboard(ctx, ref.Uid)
 		if err != nil {
 			panic(err)
 		}
