@@ -1,9 +1,6 @@
 ### grafana-sync - Keeps your Grafana dashboards in sync
 
-At each time that it's run, `grafana-sync` gathers information
-about dashboards from a particular source of truth (a grafana
-deployment) and then updates the state the filesystem to reflect
-such source.
+At each time that it's run, `grafana-sync` gathers information about dashboards from a particular source of truth (a grafana deployment) and then updates the state of the filesystem to reflect such source.
 
 ps.: assumes use of the `folders` feature from grafana 5+
 
