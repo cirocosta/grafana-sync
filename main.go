@@ -22,6 +22,8 @@ var config struct {
 		Password    string `short:"p" long:"password" description:"basic auth password"`
 		AccessToken string `long:"access-token" description:"access token to authenticate against grafana"`
 	} `group:"Authentication"`
+
+	Push pushCommand `command:"push"`
 }
 
 func eventuallyCreateDirectory(dir string) (err error) {
@@ -94,7 +96,7 @@ func main() {
 			panic(err)
 		}
 
-		err = dashboard.SaveToDisk(path.Join(dashboardFolderInFs, ref.Title))
+		err = dashboard.SaveToDisk(path.Join(dashboardFolderInFs, ref.Title) + ".json")
 		if err != nil {
 			panic(err)
 		}

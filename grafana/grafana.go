@@ -17,22 +17,22 @@ const (
 )
 
 type ClientConfig struct {
-	Verbose bool
-	Address string
+	Verbose     bool
+	Address     string
 	AccessToken string
 	Username    string
 	Password    string
 }
 
 type client struct {
-	client  *http.Client
-	cfg ClientConfig
+	client *http.Client
+	cfg    ClientConfig
 }
 
 func NewClient(opts ClientConfig) (c *client) {
 	c = &client{
-		client:      &http.Client{},
-		cfg: opts,
+		client: &http.Client{},
+		cfg:    opts,
 	}
 	return
 }
@@ -101,13 +101,22 @@ func (c *client) GetDashboard(ctx context.Context, uid string) (dashboard Dashbo
 	defer resp.Body.Close()
 
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&dashboard)
+	contents := map[string]interface{}{}
+
+	err = decoder.Decode(&contents)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to decode dashboard json")
 		return
 	}
 
+	innerDashboard, found := contents["dashboard"]
+	if !found {
+		err = errors.Errorf("dashboard not found in json response")
+		return
+	}
+
+	dashboard, _ = innerDashboard.(Dashboard)
 	dashboard["id"] = nil
 
 	return

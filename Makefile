@@ -1,6 +1,9 @@
 build:
 	go build -v -i
 
+test:
+	go test ./...
+
 run:
 	./grafana-sync \
 		--verbose \
