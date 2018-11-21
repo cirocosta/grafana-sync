@@ -4,6 +4,9 @@ build:
 test:
 	go test ./...
 
+fmt:
+	go fmt ./...
+
 run:
 	./grafana-sync \
 		--verbose \

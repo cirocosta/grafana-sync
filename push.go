@@ -1,6 +1,6 @@
 package main
 
-type pushCommand struct{
+type pushCommand struct {
 	Datasource string `long:"data-source" short:"d" required:"true" description:"datasource used by the dashboards"`
 }
 
