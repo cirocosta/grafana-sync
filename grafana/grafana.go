@@ -170,7 +170,7 @@ func (c *Client) CreateFolder(ctx context.Context, title string) (folder Folder,
 	}
 
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(folder)
+	err = decoder.Decode(&folder)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"failed to decode folder creation response")
