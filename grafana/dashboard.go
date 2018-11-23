@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type Dashboard map[string]interface{}
-
 func SetPanelDatasources(panel map[string]interface{}, datasource string) (err error) {
 	for k, v := range panel {
 		switch k {
@@ -38,7 +36,7 @@ func SetPanelDatasources(panel map[string]interface{}, datasource string) (err e
 	return
 }
 
-func (d *Dashboard) SaveToDisk(filepath string) (err error) {
+func SaveToDisk(filepath string, d map[string]interface{}) (err error) {
 	var dashboardFile *os.File
 
 	dashboardFile, err = os.Create(filepath)
@@ -56,6 +54,26 @@ func (d *Dashboard) SaveToDisk(filepath string) (err error) {
 		err = errors.Wrapf(err,
 			"failed to encode dashboard json to file %s", filepath)
 		return
+	}
+
+	return
+}
+
+func LoadFromDisk(filepath string) (dashboard map[string]interface{}, err error) {
+	dashboardFile, err := os.Open(filepath)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to open dashboard file %s", filepath)
+		return
+	}
+
+	defer dashboardFile.Close()
+
+	err = json.NewDecoder(dashboardFile).Decode(&dashboard)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"failed to read dashboard %s into memory", filepath)
+
 	}
 
 	return

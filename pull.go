@@ -23,12 +23,12 @@ func (p *pullCommand) Execute(args []string) (err error) {
 		Password:    config.Auth.Password,
 	})
 
-	refs, err := client.ListDashboardRefs(ctx)
+	refs, err := client.ListDashboardSearchEntries(ctx)
 	if err != nil {
 		return
 	}
 
-	var dashboard grafana.Dashboard
+	var dashboard map[string]interface{}
 	for _, ref := range refs {
 		dashboardFolderInFs := path.Join(string(config.Directory), ref.Folder)
 
@@ -42,7 +42,7 @@ func (p *pullCommand) Execute(args []string) (err error) {
 			return
 		}
 
-		err = dashboard.SaveToDisk(path.Join(dashboardFolderInFs, ref.Title) + ".json")
+		err = grafana.SaveToDisk(path.Join(dashboardFolderInFs, ref.Title)+".json", dashboard)
 		if err != nil {
 			return
 		}

@@ -10,8 +10,8 @@ import (
 )
 
 var config struct {
-	Address   string        `long:"address" default:"http://localhost:3000" description:"grafana address"`
-	Directory DirectoryFlag `long:"directory" default:"./" description:"directory where dashboards live"`
+	Address   string        `short:"a" long:"address" default:"http://localhost:3000" description:"grafana address"`
+	Directory DirectoryFlag `short:"d" long:"directory" default:"./" description:"directory where dashboards live"`
 	Verbose   bool          `short:"v" long:"verbose" description:"displays requests on stderr"`
 
 	Auth struct {
