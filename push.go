@@ -39,7 +39,17 @@ func (p *pushCommand) Execute(args []string) (err error) {
 		folder           grafana.Folder
 		folderEntries    []os.FileInfo
 		dashboardEntries []grafana.DashboardCreateOrUpdateEntry
+		existingFolders  = map[string]grafana.Folder{}
 	)
+
+	grafanaFolders, err := client.ListFolders(ctx)
+	if err != nil {
+		return
+	}
+
+	for _, grafanaFolder := range grafanaFolders {
+		existingFolders[grafanaFolder.Title] = grafanaFolder
+	}
 
 	for _, entry := range entries {
 		var (
@@ -62,9 +72,13 @@ func (p *pushCommand) Execute(args []string) (err error) {
 			continue
 		}
 
-		folder, err = client.CreateFolder(ctx, entry.Name())
-		if err != nil {
-			return
+		var folderAlreadyExists bool
+		folder, folderAlreadyExists = existingFolders[entry.Name()]
+		if !folderAlreadyExists {
+			folder, err = client.CreateFolder(ctx, entry.Name())
+			if err != nil {
+				return
+			}
 		}
 
 		folderEntries, err = ioutil.ReadDir(filepath)
