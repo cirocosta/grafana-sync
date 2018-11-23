@@ -14,10 +14,20 @@ func SetPanelDatasources(panel map[string]interface{}, datasource string) (err e
 			panel[k] = datasource
 
 		case "panels":
-			panels, ok := v.([]map[string]interface{})
-			if !ok {
-				err = errors.Errorf("can't convert panel list")
-				return
+			if v == nil {
+				continue
+			}
+
+			var panels []map[string]interface{}
+
+			switch v.(type) {
+			case []interface{}:
+				for _, iface := range v.([]interface{}) {
+					panels = append(panels,
+						iface.(map[string]interface{}))
+				}
+			case []map[string]interface{}:
+				panels, _ = v.([]map[string]interface{})
 			}
 
 			for _, panel := range panels {

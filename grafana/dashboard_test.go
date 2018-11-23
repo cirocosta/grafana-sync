@@ -18,8 +18,6 @@ var _ = Describe("Dashboard", func() {
 
 		JustBeforeEach(func() {
 			err = grafana.SetPanelDatasources(dashboard, datasource)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(dashboard).To(Equal(expected))
 		})
 
 		Context("not having panels", func() {
@@ -27,13 +25,10 @@ var _ = Describe("Dashboard", func() {
 				dashboard = map[string]interface{}{"foo": "bar"}
 				expected = map[string]interface{}{"foo": "bar"}
 			})
-		})
 
-		Context("being a panel", func() {
-			BeforeEach(func() {
-				dashboard = map[string]interface{}{"foo": "bar", "datasource": "ds1"}
-				expected = map[string]interface{}{"foo": "bar", "datasource": "ds2"}
-				datasource = "ds2"
+			It("works", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dashboard).To(Equal(expected))
 			})
 		})
 
@@ -42,24 +37,57 @@ var _ = Describe("Dashboard", func() {
 				dashboard = map[string]interface{}{"foo": "bar", "datasource": "ds1"}
 				expected = map[string]interface{}{"foo": "bar", "datasource": "ds2"}
 				datasource = "ds2"
+			})
+
+			It("works", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dashboard).To(Equal(expected))
+			})
+		})
+
+		Context("having nil panels list", func() {
+			BeforeEach(func() {
+				dashboard = map[string]interface{}{
+					"foo":    "bar",
+					"panels": nil,
+				}
+				expected = map[string]interface{}{
+					"foo":    "bar",
+					"panels": nil,
+				}
+				datasource = "ds2"
+			})
+
+			It("does nothing", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dashboard).To(Equal(expected))
 			})
 		})
 
 		Context("being a row with nested panels", func() {
 			BeforeEach(func() {
-				expected = map[string]interface{}{
+				dashboard = map[string]interface{}{
 					"foo": "bar",
-					"panels": map[string]interface{}{
-						"datasource": "ds1",
+					"panels": []map[string]interface{}{
+						{
+							"datasource": "ds1",
+						},
 					},
 				}
 				expected = map[string]interface{}{
 					"foo": "bar",
-					"panels": map[string]interface{}{
-						"datasource": "ds2",
+					"panels": []map[string]interface{}{
+						{
+							"datasource": "ds2",
+						},
 					},
 				}
 				datasource = "ds2"
+			})
+
+			It("works", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(dashboard).To(Equal(expected))
 			})
 		})
 	})

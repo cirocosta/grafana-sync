@@ -36,15 +36,28 @@ func (p *pushCommand) Execute(args []string) (err error) {
 	}
 
 	var (
-		folder        grafana.Folder
-		folderEntries []os.FileInfo
+		folder           grafana.Folder
+		folderEntries    []os.FileInfo
+		dashboardEntries []grafana.DashboardCreateOrUpdateEntry
 	)
+
 	for _, entry := range entries {
+		var (
+			dashboard map[string]interface{}
+			filepath  = path.Join(string(config.Directory), entry.Name())
+		)
+
 		if !entry.IsDir() {
-			err = pushDashboardFromDisk(ctx, client, path.Join(string(config.Directory), entry.Name()), 0)
+			dashboard, err = grafana.LoadFromDisk(filepath)
 			if err != nil {
 				return
 			}
+
+			dashboardEntries = append(dashboardEntries, grafana.DashboardCreateOrUpdateEntry{
+				Overwrite: true,
+				FolderId:  0,
+				Dashboard: dashboard,
+			})
 
 			continue
 		}
@@ -54,47 +67,44 @@ func (p *pushCommand) Execute(args []string) (err error) {
 			return
 		}
 
-		folderEntries, err = ioutil.ReadDir(path.Join(string(config.Directory), entry.Name()))
+		folderEntries, err = ioutil.ReadDir(filepath)
 		if err != nil {
 			return
 		}
 
 		for _, folderEntry := range folderEntries {
-			if entry.IsDir() {
-				err = errors.Errorf("can't have a dir within a grafana folder")
+			if folderEntry.IsDir() {
+				err = errors.Errorf("can't have a dir within a grafana folder %s",
+					folderEntry.Name())
 				return
 			}
 
-			err = pushDashboardFromDisk(ctx, client, path.Join(
-				string(config.Directory), entry.Name(), folderEntry.Name()), folder.Id)
+			dashboard, err = grafana.LoadFromDisk(path.Join(filepath, folderEntry.Name()))
+			if err != nil {
+				return
+			}
+
+			dashboardEntries = append(dashboardEntries, grafana.DashboardCreateOrUpdateEntry{
+				Overwrite: true,
+				FolderId:  folder.Id,
+				Dashboard: dashboard,
+			})
+		}
+	}
+
+	for _, dashboardEntry := range dashboardEntries {
+		if p.Datasource != "" {
+			err = grafana.SetPanelDatasources(
+				dashboardEntry.Dashboard, p.Datasource)
 			if err != nil {
 				return
 			}
 		}
-	}
 
-	return
-}
-
-func pushDashboardFromDisk(ctx context.Context, c *grafana.Client, filepath string, folderId int) (err error) {
-	dashboard, err := grafana.LoadFromDisk(filepath)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"could'nt load into mem")
-		return
-	}
-
-	entry := grafana.DashboardCreateOrUpdateEntry{
-		Overwrite: true,
-		FolderId:  folderId,
-		Dashboard: dashboard,
-	}
-
-	err = c.PushDashboard(ctx, entry)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"failed to push dashboard")
-		return
+		err = client.PushDashboard(ctx, dashboardEntry)
+		if err != nil {
+			return
+		}
 	}
 
 	return
