@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -58,17 +59,26 @@ func (p *pushCommand) Execute(args []string) (err error) {
 		)
 
 		if !entry.IsDir() {
-			dashboard, err = grafana.LoadFromDisk(filepath)
-			if err != nil {
-				return
+			if shouldSyncFolder(config.SyncFolders, "") {
+				dashboard, err = grafana.LoadFromDisk(filepath)
+				if err != nil {
+					return
+				}
+
+				dashboardEntries = append(dashboardEntries, grafana.DashboardCreateOrUpdateEntry{
+					Overwrite: true,
+					FolderId:  0,
+					Dashboard: dashboard,
+				})
+
+			} else {
+				fmt.Println("Not syncing file in root folder", entry.Name())
 			}
+			continue
+		}
 
-			dashboardEntries = append(dashboardEntries, grafana.DashboardCreateOrUpdateEntry{
-				Overwrite: true,
-				FolderId:  0,
-				Dashboard: dashboard,
-			})
-
+		if !shouldSyncFolder(config.SyncFolders, entry.Name()) {
+			fmt.Println("Not syncing folder: ", entry.Name())
 			continue
 		}
 

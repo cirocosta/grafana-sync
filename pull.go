@@ -10,7 +10,6 @@ import (
 )
 
 type pullCommand struct{
-	SyncFolders []string `long:"sync-folders" short:"f" description:"datasource used by the dashboards"`
 }
 
 func (p *pullCommand) Execute(args []string) (err error) {
@@ -31,7 +30,7 @@ func (p *pullCommand) Execute(args []string) (err error) {
 
 	var dashboard map[string]interface{}
 	for _, ref := range refs {
-		if ! shouldSyncFolder(p.SyncFolders, ref.Folder) {
+		if ! shouldSyncFolder(config.SyncFolders, ref.Folder) {
 			fmt.Println("Not syncing folder", ref.Folder)
 			continue
 		}
@@ -55,14 +54,7 @@ func (p *pullCommand) Execute(args []string) (err error) {
 
 	return
 }
-func shouldSyncFolder(syncFolders []string, folder string) bool {
-	for _, f := range(syncFolders) {
-		if folder == f {
-			return true
-		}
-	}
-	return false
-}
+
 
 func eventuallyCreateDirectory(dir string) (err error) {
 	finfo, err := os.Stat(dir)
