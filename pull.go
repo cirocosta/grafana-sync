@@ -2,19 +2,19 @@ package main
 
 import (
 	"context"
-	"os"
-	"path"
-
+	"fmt"
 	"github.com/cirocosta/grafana-sync/grafana"
 	"github.com/pkg/errors"
+	"os"
+	"path"
 )
 
-type pullCommand struct{}
+type pullCommand struct{
+}
 
 func (p *pullCommand) Execute(args []string) (err error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	go handleSignals(cancel)
-
 	client := grafana.NewClient(grafana.ClientConfig{
 		Address:     config.Address,
 		Verbose:     config.Verbose,
@@ -30,6 +30,10 @@ func (p *pullCommand) Execute(args []string) (err error) {
 
 	var dashboard map[string]interface{}
 	for _, ref := range refs {
+		if ! shouldSyncFolder(config.SyncFolders, ref.Folder) {
+			fmt.Println("Not syncing folder", ref.Folder)
+			continue
+		}
 		dashboardFolderInFs := path.Join(string(config.Directory), ref.Folder)
 
 		err = eventuallyCreateDirectory(dashboardFolderInFs)
@@ -50,6 +54,7 @@ func (p *pullCommand) Execute(args []string) (err error) {
 
 	return
 }
+
 
 func eventuallyCreateDirectory(dir string) (err error) {
 	finfo, err := os.Stat(dir)

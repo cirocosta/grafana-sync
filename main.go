@@ -10,11 +10,11 @@ import (
 )
 
 var config struct {
-	Address   string        `short:"a" long:"address" default:"http://localhost:3000" description:"grafana address"`
-	Directory DirectoryFlag `short:"d" long:"directory" default:"./" description:"directory where dashboards live"`
-	Verbose   bool          `short:"v" long:"verbose" description:"displays requests on stderr"`
-
-	Auth struct {
+	Address     string        `short:"a" long:"address" default:"http://localhost:3000" description:"grafana address"`
+	Directory   DirectoryFlag `short:"d" long:"directory" default:"./" description:"directory where dashboards live"`
+	Verbose     bool          `short:"v" long:"verbose" description:"displays requests on stderr"`
+	SyncFolders []string      `long:"sync-folders" short:"f" description:"specific folders to sync"`
+	Auth        struct {
 		Username    string `short:"u" long:"username" description:"basic auth username"`
 		Password    string `short:"p" long:"password" description:"basic auth password"`
 		AccessToken string `long:"access-token" description:"access token to authenticate against grafana"`
@@ -30,6 +30,15 @@ func handleSignals(cancel context.CancelFunc) {
 	<-sigChan
 
 	cancel()
+}
+
+func shouldSyncFolder(syncFolders []string, folder string) bool {
+	for _, f := range syncFolders {
+		if folder == f {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
